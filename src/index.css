@@ -121,6 +121,163 @@ h1, h2, h3, h4, .font-heading {
   transform: rotate(25deg) translateY(100%);
 }
 
+/* ==========================================================================
+   Header Dual Multi-Color Animated Stream Lines & Offer Marquee
+   Dashboard Theme: Electric Lime (#C7F464), Cyber Violet (#C8B9FF),
+   Mint (#70FFB8), Pure White (#FFFFFF), Deep Obsidian (#0A0A0C)
+   ========================================================================== */
+
+@keyframes beam-ltr {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+@keyframes beam-rtl {
+  0% {
+    transform: translateX(250%);
+  }
+  100% {
+    transform: translateX(-150%);
+  }
+}
+
+@keyframes gradient-flow-ltr {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes gradient-flow-rtl {
+  0% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes marquee-rtl {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marquee-ltr {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+/* Line 1: Animates moving Left to Right in Dashboard Theme Colors */
+.header-line-stream-ltr {
+  position: relative;
+  height: 2.5px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(199, 244, 100, 0.4),
+    rgba(200, 185, 255, 0.6),
+    rgba(112, 255, 184, 0.4),
+    rgba(255, 255, 255, 0.7),
+    rgba(199, 244, 100, 0.4)
+  );
+  background-size: 200% 100%;
+  animation: gradient-flow-ltr 4s linear infinite;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(199, 244, 100, 0.35);
+}
+
+.header-line-stream-ltr::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(199, 244, 100, 0.6) 20%,
+    #FFFFFF 50%,
+    rgba(200, 185, 255, 0.8) 80%,
+    transparent 100%
+  );
+  animation: beam-ltr 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 14px #C7F464, 0 0 20px rgba(200, 185, 255, 0.9);
+}
+
+/* Line 2: Animates moving Right to Left in Dashboard Theme Colors */
+.header-line-stream-rtl {
+  position: relative;
+  height: 2.5px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(200, 185, 255, 0.5),
+    rgba(112, 255, 184, 0.5),
+    rgba(199, 244, 100, 0.6),
+    rgba(255, 255, 255, 0.7),
+    rgba(200, 185, 255, 0.5)
+  );
+  background-size: 200% 100%;
+  animation: gradient-flow-rtl 4s linear infinite;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(200, 185, 255, 0.35);
+}
+
+.header-line-stream-rtl::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(200, 185, 255, 0.8) 20%,
+    #FFFFFF 50%,
+    rgba(199, 244, 100, 0.8) 80%,
+    transparent 100%
+  );
+  animation: beam-rtl 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 14px #C8B9FF, 0 0 20px rgba(199, 244, 100, 0.9);
+}
+
+/* Offer Marquee Animations */
+.animate-marquee-rtl {
+  display: flex;
+  width: max-content;
+  animation: marquee-rtl 28s linear infinite;
+}
+
+.animate-marquee-rtl:hover {
+  animation-play-state: paused;
+}
+
+.animate-marquee-ltr {
+  display: flex;
+  width: max-content;
+  animation: marquee-ltr 28s linear infinite;
+}
+
+.animate-marquee-ltr:hover {
+  animation-play-state: paused;
+}
+
 /* Reduced Motion Compliance */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {

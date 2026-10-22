@@ -15,6 +15,8 @@ import {
   Palette,
   ChevronRight,
   LogOut,
+  Zap,
+  Sparkles,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -41,16 +43,53 @@ export const Navbar: React.FC = () => {
   const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0A0A0C]/90 backdrop-blur-md border-b border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+    <header className="sticky top-0 z-40 bg-[#0A0A0C]/95 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
       {/* Supabase status indicator banner */}
       <SupabaseBanner />
 
-      {/* Top Announcement Bar */}
-      {storeSettings.announcement_enabled && storeSettings.announcement_text && (
-        <div className="bg-[#111116] border-b border-white/5 text-[#F7F6F2] text-[11px] font-space font-medium tracking-wider uppercase py-1.5 px-4 text-center overflow-hidden">
-          <p className="truncate text-[#C7F464]">{storeSettings.announcement_text}</p>
+      {/* LINE 1: Multi-color animated stream line moving from LEFT to RIGHT in dashboard theme colors */}
+      <div className="header-line-stream-ltr" />
+
+      {/* THE OFFER LINE: Animated marquee ticker moving in the OPPOSITE direction (RIGHT to LEFT) */}
+      <div className="bg-[#0E0E14] border-b border-white/5 py-1.5 px-3 overflow-hidden select-none relative">
+        <div className="animate-marquee-rtl flex items-center space-x-8 text-[11px] font-space font-extrabold uppercase tracking-widest text-[#F7F6F2]">
+          <span className="flex items-center gap-1.5 text-[#C7F464] shrink-0">
+            <Zap size={12} className="text-[#C7F464] animate-pulse" />
+            {storeSettings.announcement_text || "FLASH OFFER: USE CODE 'FORM10' FOR 10% OFF"}
+          </span>
+          <span className="text-[#C8B9FF]/40">✦</span>
+          <span className="text-[#C8B9FF] flex items-center gap-1 shrink-0">
+            <Sparkles size={12} /> FREE EXPRESS COURIER SHIPPING OVER ₹1,999
+          </span>
+          <span className="text-[#C7F464]/40">✦</span>
+          <span className="text-[#70FFB8] shrink-0">240 GSM HEAVYWEIGHT COMBED COTTON DROP</span>
+          <span className="text-white/30">✦</span>
+          <span className="text-white shrink-0">INTERACTIVE 2D CUSTOM STUDIO LIVE</span>
+          <span className="text-[#C8B9FF]/40">✦</span>
+          <span className="text-[#C7F464] shrink-0">7-DAY HASSLE-FREE FIT &amp; SIZE EXCHANGE</span>
+          <span className="text-[#70FFB8]/40">✦</span>
+
+          {/* Duplicate segment for continuous seamless infinite loop */}
+          <span className="flex items-center gap-1.5 text-[#C7F464] shrink-0">
+            <Zap size={12} className="text-[#C7F464] animate-pulse" />
+            {storeSettings.announcement_text || "FLASH OFFER: USE CODE 'FORM10' FOR 10% OFF"}
+          </span>
+          <span className="text-[#C8B9FF]/40">✦</span>
+          <span className="text-[#C8B9FF] flex items-center gap-1 shrink-0">
+            <Sparkles size={12} /> FREE EXPRESS COURIER SHIPPING OVER ₹1,999
+          </span>
+          <span className="text-[#C7F464]/40">✦</span>
+          <span className="text-[#70FFB8] shrink-0">240 GSM HEAVYWEIGHT COMBED COTTON DROP</span>
+          <span className="text-white/30">✦</span>
+          <span className="text-white shrink-0">INTERACTIVE 2D CUSTOM STUDIO LIVE</span>
+          <span className="text-[#C8B9FF]/40">✦</span>
+          <span className="text-[#C7F464] shrink-0">7-DAY HASSLE-FREE FIT &amp; SIZE EXCHANGE</span>
+          <span className="text-[#70FFB8]/40">✦</span>
         </div>
-      )}
+      </div>
+
+      {/* LINE 2: Multi-color animated stream line moving from RIGHT to LEFT in dashboard theme colors */}
+      <div className="header-line-stream-rtl" />
 
       {/* Main Header Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -298,6 +337,9 @@ export const Navbar: React.FC = () => {
 
       {/* Cart Slide-over */}
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      {/* Bottom Header Animated Stream Line (Dashboard Theme: Left to Right) */}
+      <div className="header-line-stream-ltr opacity-80" />
     </header>
   );
 };
