@@ -156,30 +156,30 @@ export const CustomStudio: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="border-b border-[#111111]/15 pb-6">
-        <span className="text-[10px] font-space font-bold uppercase tracking-widest text-[#111111]/50">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 text-[#F7F6F2]">
+      <div className="border-b border-white/10 pb-6">
+        <span className="text-[10px] font-space font-bold uppercase tracking-widest text-[#C7F464]">
           Form &amp; Fit Studio
         </span>
-        <h1 className="font-space font-extrabold text-3xl uppercase tracking-tight text-[#111111]">
+        <h1 className="font-space font-extrabold text-3xl uppercase tracking-tight text-[#F7F6F2]">
           Interactive Custom T-Shirt Studio
         </h1>
-        <p className="text-xs text-[#111111]/70 font-sans mt-1">
+        <p className="text-xs text-[#F7F6F2]/70 font-sans mt-1">
           Customize your heavyweight cotton t-shirt with real-time print preview, custom typography, and logo uploads.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Toolbar */}
-        <div className="lg:col-span-4 bg-white border border-[#111111]/15 p-6 space-y-6">
-          <h3 className="font-space font-bold text-xs uppercase tracking-wider flex items-center gap-2 border-b border-[#111111]/10 pb-3">
+        <div className="lg:col-span-4 bg-[#121216]/90 border border-white/10 p-6 space-y-6 rounded-xs shadow-xl backdrop-blur-md">
+          <h3 className="font-space font-bold text-xs uppercase tracking-wider flex items-center gap-2 border-b border-white/10 pb-3 text-[#C7F464]">
             <Palette size={16} /> Customize Apparel Specs
           </h3>
 
           {/* Color Selection */}
           <div className="space-y-2">
-            <label className="block text-xs font-space font-bold uppercase">
-              1. Base Garment Color: <span className="font-normal">{shirtColor}</span>
+            <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
+              1. Base Garment Color: <span className="font-normal text-[#C7F464]">{shirtColor}</span>
             </label>
             <div className="grid grid-cols-3 gap-2">
               {colorOptions.map((c) => (
@@ -189,12 +189,14 @@ export const CustomStudio: React.FC = () => {
                     setShirtColor(c.name);
                     setShirtColorHex(c.hex);
                   }}
-                  className={`p-2 text-[11px] font-space uppercase border flex items-center gap-2 cursor-pointer ${
-                    shirtColor === c.name ? 'border-[#111111] border-2 font-bold' : 'border-[#111111]/20'
+                  className={`p-2 text-[11px] font-space uppercase border flex items-center gap-2 cursor-pointer rounded-xs transition-all ${
+                    shirtColor === c.name
+                      ? 'border-[#C7F464] bg-[#0A0A0C] text-[#C7F464] font-extrabold shadow-[0_0_10px_rgba(199,244,100,0.3)]'
+                      : 'border-white/10 hover:border-white/30 text-[#F7F6F2]/70'
                   }`}
                 >
                   <span
-                    className="w-4 h-4 rounded-full border border-black/20"
+                    className="w-4 h-4 rounded-full border border-black/30"
                     style={{ backgroundColor: c.hex }}
                   />
                   <span className="truncate">{c.name.split(' ')[0]}</span>
@@ -204,17 +206,19 @@ export const CustomStudio: React.FC = () => {
           </div>
 
           {/* Size Selection */}
-          <div className="space-y-2 pt-3 border-t border-[#111111]/10">
-            <label className="block text-xs font-space font-bold uppercase">
-              2. Select Size: <span className="font-normal">{selectedSize}</span>
+          <div className="space-y-2 pt-3 border-t border-white/10">
+            <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
+              2. Select Size: <span className="font-normal text-[#C7F464]">{selectedSize}</span>
             </label>
             <div className="flex gap-2">
               {['S', 'M', 'L', 'XL', 'XXL'].map((sz) => (
                 <button
                   key={sz}
                   onClick={() => setSelectedSize(sz)}
-                  className={`flex-1 py-2 text-xs font-mono font-bold border cursor-pointer ${
-                    selectedSize === sz ? 'bg-[#111111] text-[#C7F464] border-[#111111]' : 'border-[#111111]/20 hover:bg-[#F7F6F2]'
+                  className={`flex-1 py-2 text-xs font-mono font-bold border cursor-pointer rounded-xs transition-all ${
+                    selectedSize === sz
+                      ? 'bg-[#C7F464] text-[#111111] border-[#C7F464] shadow-[0_0_10px_rgba(199,244,100,0.4)]'
+                      : 'border-white/15 text-[#F7F6F2] hover:bg-white/5'
                   }`}
                 >
                   {sz}
@@ -224,8 +228,8 @@ export const CustomStudio: React.FC = () => {
           </div>
 
           {/* Add Text */}
-          <div className="space-y-3 pt-3 border-t border-[#111111]/10">
-            <label className="block text-xs font-space font-bold uppercase">
+          <div className="space-y-3 pt-3 border-t border-white/10">
+            <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
               3. Add Custom Text
             </label>
             <form onSubmit={handleAddText} className="space-y-2">
@@ -234,16 +238,16 @@ export const CustomStudio: React.FC = () => {
                 placeholder="Type artwork text..."
                 value={newText}
                 onChange={(e) => setNewText(e.target.value)}
-                className="w-full bg-[#F7F6F2] border border-[#111111] p-2 text-xs focus:outline-none"
+                className="glow-input w-full p-2 text-xs rounded-xs"
               />
               <div className="flex gap-2">
                 <select
                   value={selectedFont}
                   onChange={(e) => setSelectedFont(e.target.value)}
-                  className="flex-1 bg-white border border-[#111111] p-1.5 text-xs font-space"
+                  className="flex-1 bg-[#0A0A0C] border border-white/20 p-1.5 text-xs font-space text-[#F7F6F2] rounded-xs"
                 >
                   {fonts.map((f) => (
-                    <option key={f} value={f}>
+                    <option key={f} value={f} className="bg-[#111116] text-[#F7F6F2]">
                       {f}
                     </option>
                   ))}
@@ -252,13 +256,13 @@ export const CustomStudio: React.FC = () => {
                   type="color"
                   value={textColor}
                   onChange={(e) => setTextColor(e.target.value)}
-                  className="w-9 h-8 border border-[#111111] cursor-pointer"
+                  className="w-9 h-8 border border-white/20 cursor-pointer bg-transparent rounded-xs"
                   title="Pick text color"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full py-2 bg-[#111111] text-[#F7F6F2] font-space text-xs uppercase font-bold hover:bg-[#C7F464] hover:text-[#111111] transition-colors cursor-pointer flex items-center justify-center gap-1"
+                className="w-full py-2 bg-white/10 border border-white/20 text-[#F7F6F2] font-space text-xs uppercase font-bold hover:bg-[#C7F464] hover:text-[#111111] hover:border-[#C7F464] transition-all cursor-pointer flex items-center justify-center gap-1 rounded-xs"
               >
                 <Type size={14} /> Add Text to {viewSide.toUpperCase()}
               </button>
@@ -266,8 +270,8 @@ export const CustomStudio: React.FC = () => {
           </div>
 
           {/* Upload Custom Graphic */}
-          <div className="space-y-2 pt-3 border-t border-[#111111]/10">
-            <label className="block text-xs font-space font-bold uppercase">
+          <div className="space-y-2 pt-3 border-t border-white/10">
+            <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
               4. Upload Graphic / Logo
             </label>
             <input
@@ -279,7 +283,7 @@ export const CustomStudio: React.FC = () => {
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-full py-2 bg-[#E8E8E8] text-[#111111] border border-[#111111] font-space text-xs uppercase font-bold hover:bg-[#111111] hover:text-[#F7F6F2] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2 bg-white/10 text-[#F7F6F2] border border-white/20 font-space text-xs uppercase font-bold hover:bg-[#C7F464] hover:text-[#111111] transition-colors flex items-center justify-center gap-2 cursor-pointer rounded-xs"
             >
               <Upload size={14} /> Upload PNG / JPG Image
             </button>
@@ -287,16 +291,16 @@ export const CustomStudio: React.FC = () => {
 
           {/* Controls for Selected Element */}
           {selectedElementId && (
-            <div className="p-3 bg-[#F7F6F2] border border-[#111111] space-y-2 text-xs">
-              <div className="flex justify-between items-center font-space font-bold">
+            <div className="p-3 bg-[#0A0A0C] border border-[#C7F464]/40 space-y-2 text-xs rounded-xs">
+              <div className="flex justify-between items-center font-space font-bold text-[#C7F464]">
                 <span>Selected Element Controls</span>
-                <button onClick={removeSelectedElement} className="text-red-600 hover:underline cursor-pointer">
+                <button onClick={removeSelectedElement} className="text-red-400 hover:underline cursor-pointer">
                   <Trash2 size={14} />
                 </button>
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-mono">Scale Size:</span>
+                <span className="text-[10px] uppercase font-mono text-[#F7F6F2]/70">Scale Size:</span>
                 <input
                   type="range"
                   min="0.5"
@@ -304,12 +308,12 @@ export const CustomStudio: React.FC = () => {
                   step="0.1"
                   value={activeElements.find((e) => e.id === selectedElementId)?.scale || 1}
                   onChange={(e) => updateSelectedElement({ scale: Number(e.target.value) })}
-                  className="w-full accent-[#111111]"
+                  className="w-full accent-[#C7F464]"
                 />
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-mono">Rotation:</span>
+                <span className="text-[10px] uppercase font-mono text-[#F7F6F2]/70">Rotation:</span>
                 <input
                   type="range"
                   min="-180"
@@ -317,7 +321,7 @@ export const CustomStudio: React.FC = () => {
                   step="15"
                   value={activeElements.find((e) => e.id === selectedElementId)?.rotation || 0}
                   onChange={(e) => updateSelectedElement({ rotation: Number(e.target.value) })}
-                  className="w-full accent-[#111111]"
+                  className="w-full accent-[#C7F464]"
                 />
               </div>
             </div>
@@ -326,54 +330,57 @@ export const CustomStudio: React.FC = () => {
 
         {/* Center Canvas Preview Area */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="flex justify-between items-center bg-white p-4 border border-[#111111]/15">
+          <div className="flex justify-between items-center bg-[#121216]/90 p-4 border border-white/10 rounded-xs">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-space font-bold uppercase text-[#111111]">Side View:</span>
+              <span className="text-xs font-space font-bold uppercase text-[#F7F6F2]">Side View:</span>
               <button
                 onClick={() => setViewSide('front')}
-                className={`px-3 py-1 text-xs font-space font-bold uppercase border cursor-pointer ${
-                  viewSide === 'front' ? 'bg-[#111111] text-[#C7F464]' : 'bg-white text-[#111111]'
+                className={`px-3 py-1 text-xs font-space font-bold uppercase border cursor-pointer rounded-xs transition-colors ${
+                  viewSide === 'front' ? 'bg-[#C7F464] text-[#111111] border-[#C7F464]' : 'bg-transparent text-[#F7F6F2] border-white/20'
                 }`}
               >
                 Front View
               </button>
               <button
                 onClick={() => setViewSide('back')}
-                className={`px-3 py-1 text-xs font-space font-bold uppercase border cursor-pointer ${
-                  viewSide === 'back' ? 'bg-[#111111] text-[#C7F464]' : 'bg-white text-[#111111]'
+                className={`px-3 py-1 text-xs font-space font-bold uppercase border cursor-pointer rounded-xs transition-colors ${
+                  viewSide === 'back' ? 'bg-[#C7F464] text-[#111111] border-[#C7F464]' : 'bg-transparent text-[#F7F6F2] border-white/20'
                 }`}
               >
                 Back View
               </button>
             </div>
 
-            <span className="text-xs font-mono font-bold text-[#111111]/60">
+            <span className="text-xs font-mono font-bold text-[#C7F464]">
               {activeElements.length} Item(s) on {viewSide.toUpperCase()}
             </span>
           </div>
 
-          {/* Interactive Mockup Preview Canvas */}
-          <div className="relative aspect-[4/5] bg-white border border-[#111111] flex items-center justify-center p-8 overflow-hidden select-none shadow-xl">
+          {/* Interactive Mockup Preview Canvas with Ambient Backlight Glow */}
+          <div className="relative aspect-[4/5] bg-[#141418] border border-white/15 flex items-center justify-center p-8 overflow-hidden select-none shadow-2xl rounded-xs">
+            {/* Ambient Garment Glow */}
+            <div className="absolute inset-0 bg-radial from-[#C7F464]/10 via-transparent to-transparent blur-3xl pointer-events-none" />
+
             {/* T-Shirt SVG Representation */}
             <div
-              className="w-full h-full max-w-md relative flex items-center justify-center transition-colors duration-300"
+              className="w-full h-full max-w-md relative flex items-center justify-center transition-colors duration-300 z-10"
               style={{ backgroundColor: 'transparent' }}
             >
               {/* T-Shirt Base Silhouette SVG */}
-              <svg viewBox="0 0 400 480" className="w-full h-full drop-shadow-md">
+              <svg viewBox="0 0 400 480" className="w-full h-full drop-shadow-2xl">
                 <path
                   d="M130,40 C160,70 240,70 270,40 L350,90 L310,170 L280,150 L280,440 L120,440 L120,150 L90,170 L50,90 Z"
                   fill={shirtColorHex}
-                  stroke="#111111"
+                  stroke="#22222B"
                   strokeWidth="3"
                 />
                 {/* Collar seam */}
                 <path
                   d="M130,40 C170,80 230,80 270,40"
                   fill="none"
-                  stroke="#111111"
+                  stroke="#22222B"
                   strokeWidth="2"
-                  opacity="0.3"
+                  opacity="0.4"
                 />
                 {/* Print Boundary Box */}
                 <rect
@@ -382,18 +389,18 @@ export const CustomStudio: React.FC = () => {
                   width="150"
                   height="260"
                   fill="none"
-                  stroke="#111111"
+                  stroke="#C7F464"
                   strokeWidth="1"
                   strokeDasharray="4 4"
-                  opacity="0.3"
+                  opacity="0.4"
                 />
-                <text x="200" y="385" textAnchor="middle" fontSize="9" fill="#111111" opacity="0.4" fontFamily="Space Grotesk">
+                <text x="200" y="385" textAnchor="middle" fontSize="9" fill="#C7F464" opacity="0.6" fontFamily="Space Grotesk">
                   PRINT AREA ({viewSide.toUpperCase()})
                 </text>
               </svg>
 
               {/* Render Design Elements inside Printable Area */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                 <div className="w-[150px] h-[260px] relative pointer-events-auto">
                   {activeElements.map((el) => {
                     const isSelected = el.id === selectedElementId;
@@ -402,7 +409,7 @@ export const CustomStudio: React.FC = () => {
                         key={el.id}
                         onClick={() => setSelectedElementId(el.id)}
                         className={`absolute cursor-move transition-transform ${
-                          isSelected ? 'outline-2 outline-dashed outline-[#111111]' : ''
+                          isSelected ? 'outline-2 outline-dashed outline-[#C7F464]' : ''
                         }`}
                         style={{
                           left: `${el.x}%`,
@@ -438,10 +445,10 @@ export const CustomStudio: React.FC = () => {
           </div>
 
           {/* Pricing & Add to Cart Summary */}
-          <div className="bg-[#111111] text-[#F7F6F2] p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-[#121216] border border-white/15 text-[#F7F6F2] p-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xs shadow-2xl">
             <div>
               <div className="flex items-baseline gap-2">
-                <span className="font-space font-bold text-2xl text-[#C7F464]">
+                <span className="font-space font-extrabold text-2xl text-[#C7F464]">
                   ₹{totalPrice.toLocaleString('en-IN')}
                 </span>
                 <span className="text-xs text-white/60">
@@ -455,7 +462,7 @@ export const CustomStudio: React.FC = () => {
 
             <button
               onClick={handleAddToCart}
-              className="px-8 py-3.5 bg-[#C7F464] text-[#111111] font-space font-extrabold text-xs uppercase tracking-widest hover:bg-white transition-colors flex items-center gap-2 cursor-pointer"
+              className="glow-btn-primary light-sweep px-8 py-3.5 text-xs flex items-center gap-2 cursor-pointer rounded-xs"
             >
               <ShoppingBag size={16} /> Add Custom Tee To Bag
             </button>

@@ -37,12 +37,19 @@ const OwnerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
-// Customer Layout wrapper to render Navbar & Footer
+import { AnimatedBackground } from './components/AnimatedBackground';
+import { MobileBottomNav } from './components/MobileBottomNav';
+
+// Customer Layout wrapper to render Navbar & Footer with Animated Background
 const CustomerLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="min-h-screen bg-[#F7F6F2] text-[#111111] font-sans flex flex-col selection:bg-[#C7F464] selection:text-[#111111]">
-    <Navbar />
-    <main className="flex-1">{children}</main>
-    <Footer />
+  <div className="min-h-screen bg-[#0A0A0C] text-[#F7F6F2] font-sans flex flex-col relative overflow-x-hidden selection:bg-[#C7F464] selection:text-[#111111] pb-16 md:pb-0">
+    <AnimatedBackground />
+    <div className="relative z-10 flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </div>
+    <MobileBottomNav />
   </div>
 );
 

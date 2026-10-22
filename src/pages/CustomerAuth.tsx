@@ -113,40 +113,43 @@ export const CustomerAuth: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto my-12 px-4 font-sans">
+    <div className="max-w-md mx-auto my-12 px-4 font-sans text-[#F7F6F2]">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="bg-white border-2 border-[#111111] p-8 shadow-2xl space-y-6 relative overflow-hidden"
+        className="bg-[#121216]/90 border border-white/20 p-8 shadow-2xl space-y-6 relative overflow-hidden backdrop-blur-xl rounded-xs hover:border-[#C7F464]/50 transition-colors"
       >
+        {/* Subtle Ambient Accent Light in Card Background */}
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-[#C7F464]/15 rounded-full blur-3xl pointer-events-none" />
+
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link to="/" className="inline-block group">
-            <span className="font-space font-extrabold text-2xl uppercase tracking-tighter text-[#111111] group-hover:text-[#111111]/80 transition-colors">
+            <span className="font-space font-extrabold text-2xl uppercase tracking-tighter text-[#F7F6F2] group-hover:text-[#C7F464] transition-colors">
               FORM &amp; FIT
             </span>
-            <span className="block text-[9px] font-space tracking-widest text-[#111111]/50 uppercase -mt-1">
+            <span className="block text-[9px] font-space tracking-widest text-[#C7F464] uppercase -mt-1">
               Personalized Apparel Portal
             </span>
           </Link>
-          <h2 className="font-space font-bold text-lg uppercase text-[#111111] pt-1">
+          <h2 className="font-space font-bold text-lg uppercase text-[#F7F6F2] pt-1">
             {mode === 'signin' ? 'Welcome Back' : 'Create Your Form & Fit Account'}
           </h2>
         </div>
 
         {/* Tab Switcher */}
-        <div className="grid grid-cols-2 bg-[#F7F6F2] p-1 border border-[#111111] font-space text-xs font-bold uppercase">
+        <div className="grid grid-cols-2 bg-[#0A0A0C] p-1 border border-white/10 font-space text-xs font-bold uppercase rounded-xs">
           <button
             type="button"
             onClick={() => {
               setMode('signin');
               setBanner(null);
             }}
-            className={`py-2 transition-all cursor-pointer ${
+            className={`py-2 transition-all cursor-pointer rounded-xs ${
               mode === 'signin'
-                ? 'bg-[#111111] text-[#C7F464] shadow-xs'
-                : 'text-[#111111]/60 hover:text-[#111111]'
+                ? 'bg-[#C7F464] text-[#111111] shadow-[0_0_10px_rgba(199,244,100,0.3)] font-extrabold'
+                : 'text-[#F7F6F2]/60 hover:text-[#F7F6F2]'
             }`}
           >
             Sign In
@@ -157,10 +160,10 @@ export const CustomerAuth: React.FC = () => {
               setMode('register');
               setBanner(null);
             }}
-            className={`py-2 transition-all cursor-pointer ${
+            className={`py-2 transition-all cursor-pointer rounded-xs ${
               mode === 'register'
-                ? 'bg-[#111111] text-[#C7F464] shadow-xs'
-                : 'text-[#111111]/60 hover:text-[#111111]'
+                ? 'bg-[#C7F464] text-[#111111] shadow-[0_0_10px_rgba(199,244,100,0.3)] font-extrabold'
+                : 'text-[#F7F6F2]/60 hover:text-[#F7F6F2]'
             }`}
           >
             Register
@@ -174,16 +177,16 @@ export const CustomerAuth: React.FC = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className={`p-3 text-xs font-space font-bold flex items-center gap-2 border ${
+              className={`p-3 text-xs font-space font-bold flex items-center gap-2 border rounded-xs ${
                 banner.type === 'success'
-                  ? 'bg-[#C7F464]/30 text-[#111111] border-[#111111]'
-                  : 'bg-red-100 text-red-800 border-red-400'
+                  ? 'bg-[#C7F464]/20 text-[#C7F464] border-[#C7F464]'
+                  : 'bg-red-950/60 text-red-200 border-red-500'
               }`}
             >
               {banner.type === 'success' ? (
-                <CheckCircle2 size={16} className="shrink-0 text-[#111111]" />
+                <CheckCircle2 size={16} className="shrink-0 text-[#C7F464]" />
               ) : (
-                <AlertCircle size={16} className="shrink-0 text-red-600" />
+                <AlertCircle size={16} className="shrink-0 text-red-400" />
               )}
               <span>{banner.message}</span>
             </motion.div>
@@ -201,7 +204,7 @@ export const CustomerAuth: React.FC = () => {
             className="space-y-4"
           >
             <div className="space-y-1">
-              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+              <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
                 Email Address *
               </label>
               <div className="relative">
@@ -211,15 +214,15 @@ export const CustomerAuth: React.FC = () => {
                   placeholder="name@domain.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs focus:outline-none focus:ring-1 focus:ring-[#111111]"
+                  className="glow-input w-full p-2.5 pl-9 text-xs rounded-xs"
                 />
-                <Mail size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <Mail size={16} className="absolute left-2.5 top-3 text-[#F7F6F2]/40" />
               </div>
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between items-center text-xs font-space">
-                <label className="font-bold uppercase text-[#111111]">Password *</label>
+                <label className="font-bold uppercase text-[#F7F6F2]">Password *</label>
               </div>
               <div className="relative">
                 <input
@@ -228,13 +231,13 @@ export const CustomerAuth: React.FC = () => {
                   placeholder="Enter your password..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 pr-10 text-xs focus:outline-none focus:ring-1 focus:ring-[#111111]"
+                  className="glow-input w-full p-2.5 pl-9 pr-10 text-xs rounded-xs"
                 />
-                <Lock size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <Lock size={16} className="absolute left-2.5 top-3 text-[#F7F6F2]/40" />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-3 text-[#111111]/50 hover:text-[#111111] cursor-pointer"
+                  className="absolute right-2.5 top-3 text-[#F7F6F2]/50 hover:text-[#C7F464] cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -244,7 +247,7 @@ export const CustomerAuth: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-[#111111] text-[#C7F464] font-space font-extrabold text-xs uppercase tracking-widest hover:bg-[#C7F464] hover:text-[#111111] transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="glow-btn-primary light-sweep w-full py-3.5 text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 rounded-xs"
             >
               {loading ? (
                 <span className="animate-pulse">Authenticating...</span>
@@ -268,7 +271,7 @@ export const CustomerAuth: React.FC = () => {
             className="space-y-4"
           >
             <div className="space-y-1">
-              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+              <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
                 Full Name *
               </label>
               <div className="relative">
@@ -278,14 +281,14 @@ export const CustomerAuth: React.FC = () => {
                   placeholder="e.g. Rahul Sharma"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs focus:outline-none"
+                  className="glow-input w-full p-2.5 pl-9 text-xs rounded-xs"
                 />
-                <User size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <User size={16} className="absolute left-2.5 top-3 text-[#F7F6F2]/40" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+              <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
                 Email Address *
               </label>
               <div className="relative">
@@ -295,14 +298,14 @@ export const CustomerAuth: React.FC = () => {
                   placeholder="name@domain.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs focus:outline-none"
+                  className="glow-input w-full p-2.5 pl-9 text-xs rounded-xs"
                 />
-                <Mail size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <Mail size={16} className="absolute left-2.5 top-3 text-[#F7F6F2]/40" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+              <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
                 Phone Number (Optional)
               </label>
               <div className="relative">
@@ -311,14 +314,14 @@ export const CustomerAuth: React.FC = () => {
                   placeholder="+91 98765 43210"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs focus:outline-none"
+                  className="glow-input w-full p-2.5 pl-9 text-xs rounded-xs"
                 />
-                <Phone size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <Phone size={16} className="absolute left-2.5 top-3 text-[#F7F6F2]/40" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+              <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
                 Password *
               </label>
               <div className="relative">
@@ -328,13 +331,13 @@ export const CustomerAuth: React.FC = () => {
                   placeholder="At least 6 characters..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 pr-10 text-xs focus:outline-none"
+                  className="glow-input w-full p-2.5 pl-9 pr-10 text-xs rounded-xs"
                 />
-                <Lock size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <Lock size={16} className="absolute left-2.5 top-3 text-[#F7F6F2]/40" />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2.5 top-3 text-[#111111]/50 hover:text-[#111111] cursor-pointer"
+                  className="absolute right-2.5 top-3 text-[#F7F6F2]/50 hover:text-[#C7F464] cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -343,11 +346,11 @@ export const CustomerAuth: React.FC = () => {
               {/* Password strength bar */}
               {password && (
                 <div className="pt-1.5 space-y-1">
-                  <div className="flex justify-between items-center text-[10px] font-mono uppercase">
+                  <div className="flex justify-between items-center text-[10px] font-mono uppercase text-[#F7F6F2]/70">
                     <span>Password Strength:</span>
-                    <span className="font-bold">{strength.label}</span>
+                    <span className="font-bold text-[#C7F464]">{strength.label}</span>
                   </div>
-                  <div className="w-full bg-gray-200 h-1.5 overflow-hidden">
+                  <div className="w-full bg-white/10 h-1.5 overflow-hidden rounded-xs">
                     <div
                       className={`h-full transition-all duration-300 ${strength.color}`}
                       style={{ width: `${strength.score}%` }}
@@ -358,7 +361,7 @@ export const CustomerAuth: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+              <label className="block text-xs font-space font-bold uppercase text-[#F7F6F2]">
                 Confirm Password *
               </label>
               <div className="relative">
@@ -368,13 +371,13 @@ export const CustomerAuth: React.FC = () => {
                   placeholder="Re-enter your password..."
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 pr-10 text-xs focus:outline-none"
+                  className="glow-input w-full p-2.5 pl-9 pr-10 text-xs rounded-xs"
                 />
-                <Lock size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <Lock size={16} className="absolute left-2.5 top-3 text-[#F7F6F2]/40" />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-2.5 top-3 text-[#111111]/50 hover:text-[#111111] cursor-pointer"
+                  className="absolute right-2.5 top-3 text-[#F7F6F2]/50 hover:text-[#C7F464] cursor-pointer"
                 >
                   {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -384,7 +387,7 @@ export const CustomerAuth: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-[#111111] text-[#C7F464] font-space font-extrabold text-xs uppercase tracking-widest hover:bg-[#C7F464] hover:text-[#111111] transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="glow-btn-primary light-sweep w-full py-3.5 text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 rounded-xs"
             >
               {loading ? (
                 <span className="animate-pulse">Creating Account...</span>
@@ -398,10 +401,10 @@ export const CustomerAuth: React.FC = () => {
         )}
 
         {/* Footer Admin Switcher Link */}
-        <div className="pt-4 border-t border-[#111111]/10 text-center">
+        <div className="pt-4 border-t border-white/10 text-center">
           <Link
             to="/owner/login"
-            className="text-xs font-space font-bold uppercase text-[#111111] hover:underline flex items-center justify-center gap-1.5"
+            className="text-xs font-space font-bold uppercase text-[#C7F464] hover:underline flex items-center justify-center gap-1.5"
           >
             <ShieldCheck size={14} /> Store Owner / Admin Portal Access
           </Link>
