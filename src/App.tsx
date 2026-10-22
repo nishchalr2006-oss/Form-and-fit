@@ -14,6 +14,7 @@ import { CartPage } from './pages/CartPage';
 import { Checkout } from './pages/Checkout';
 import { WishlistPage } from './pages/WishlistPage';
 import { CustomerAccount } from './pages/CustomerAccount';
+import { CustomerAuth } from './pages/CustomerAuth';
 import { AboutPage, ContactPage, SizeGuidePage, PolicyPage } from './pages/InfoPages';
 
 // Owner Pages
@@ -59,6 +60,8 @@ export default function App() {
             <Route path="/cart" element={<CustomerLayout><CartPage /></CustomerLayout>} />
             <Route path="/checkout" element={<CustomerLayout><Checkout /></CustomerLayout>} />
             <Route path="/wishlist" element={<CustomerLayout><WishlistPage /></CustomerLayout>} />
+            <Route path="/login" element={<CustomerLayout><CustomerAuth /></CustomerLayout>} />
+            <Route path="/register" element={<CustomerLayout><CustomerAuth /></CustomerLayout>} />
             <Route path="/account" element={<CustomerLayout><CustomerAccount /></CustomerLayout>} />
             <Route path="/account/orders/:id" element={<CustomerLayout><CustomerAccount /></CustomerLayout>} />
 

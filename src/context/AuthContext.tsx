@@ -8,6 +8,8 @@ interface AuthContextType {
   isOwner: boolean;
   isAdmin: boolean;
   login: (email: string, role?: UserRole) => Promise<{ success: boolean; message?: string }>;
+  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ success: boolean; message?: string }>;
+  signInWithPassword: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   setOwnerSession: () => void;
@@ -17,7 +19,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(() => {
-    // Check saved session in localStorage
     const saved = localStorage.getItem('form_fit_user_session');
     if (saved) {
       try {
@@ -33,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (isSupabaseConfigured()) {
-      // Fetch initial session from Supabase
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
           fetchUserProfile(session.user.id, session.user.email || '');
@@ -46,8 +46,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           fetchUserProfile(session.user.id, session.user.email || '');
         } else {
-          setUser(null);
-          localStorage.removeItem('form_fit_user_session');
+          if (!localStorage.getItem('form_fit_owner_mode')) {
+            setUser(null);
+            localStorage.removeItem('form_fit_user_session');
+          }
           setLoading(false);
         }
       });
@@ -66,23 +68,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-      }
-
       if (data) {
         const profile: UserProfile = {
           id: data.id,
           email: data.email || email,
           full_name: data.full_name,
           phone: data.phone,
-          role: data.role as UserRole,
+          role: (data.role as UserRole) || 'customer',
           created_at: data.created_at,
         };
         setUser(profile);
         localStorage.setItem('form_fit_user_session', JSON.stringify(profile));
       } else {
-        // Create profile fallback
         const newProfile: UserProfile = {
           id: userId,
           email: email,
@@ -99,6 +96,98 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signUp = async (email: string, password: string, fullName: string, phone?: string) => {
+    setLoading(true);
+    try {
+      if (isSupabaseConfigured()) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              phone: phone || '',
+            },
+          },
+        });
+
+        if (error) {
+          setLoading(false);
+          return { success: false, message: error.message };
+        }
+
+        if (data.user) {
+          const profile: UserProfile = {
+            id: data.user.id,
+            email: email,
+            full_name: fullName,
+            phone: phone || '',
+            role: 'customer',
+            created_at: new Date().toISOString(),
+          };
+
+          // Upsert profile into public.profiles table
+          await supabase.from('profiles').upsert(profile);
+          setUser(profile);
+          localStorage.setItem('form_fit_user_session', JSON.stringify(profile));
+        }
+
+        setLoading(false);
+        return { success: true, message: 'Account registered successfully! Welcome to Form & Fit.' };
+      } else {
+        // Direct local registration
+        const localProfile: UserProfile = {
+          id: `usr_${Math.random().toString(36).substring(2, 9)}`,
+          email,
+          full_name: fullName,
+          phone: phone || '',
+          role: 'customer',
+          created_at: new Date().toISOString(),
+        };
+        setUser(localProfile);
+        localStorage.setItem('form_fit_user_session', JSON.stringify(localProfile));
+        setLoading(false);
+        return { success: true, message: 'Account registered successfully!' };
+      }
+    } catch (err: any) {
+      setLoading(false);
+      return { success: false, message: err?.message || 'Registration failed' };
+    }
+  };
+
+  const signInWithPassword = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      if (isSupabaseConfigured()) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          setLoading(false);
+          return { success: false, message: error.message };
+        }
+        if (data.user) {
+          await fetchUserProfile(data.user.id, data.user.email || email);
+        }
+        setLoading(false);
+        return { success: true };
+      } else {
+        const localProfile: UserProfile = {
+          id: `usr_${Math.random().toString(36).substring(2, 9)}`,
+          email,
+          full_name: email.split('@')[0].toUpperCase(),
+          role: 'customer',
+          created_at: new Date().toISOString(),
+        };
+        setUser(localProfile);
+        localStorage.setItem('form_fit_user_session', JSON.stringify(localProfile));
+        setLoading(false);
+        return { success: true };
+      }
+    } catch (err: any) {
+      setLoading(false);
+      return { success: false, message: err?.message || 'Authentication failed' };
+    }
+  };
+
   const login = async (email: string, requestedRole: UserRole = 'customer') => {
     setLoading(true);
     try {
@@ -110,7 +199,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return { success: true, message: 'Magic login link sent to your email.' };
       } else {
-        // Direct session initialization for testing
         const simulatedProfile: UserProfile = {
           id: `usr_${Math.random().toString(36).substring(2, 9)}`,
           email: email,
@@ -139,6 +227,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     setUser(ownerProfile);
     localStorage.setItem('form_fit_user_session', JSON.stringify(ownerProfile));
+    localStorage.setItem('form_fit_owner_mode', 'true');
   };
 
   const logout = async () => {
@@ -147,6 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setUser(null);
     localStorage.removeItem('form_fit_user_session');
+    localStorage.removeItem('form_fit_owner_mode');
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
@@ -171,6 +261,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOwner,
         isAdmin,
         login,
+        signUp,
+        signInWithPassword,
         logout,
         updateProfile,
         setOwnerSession,
