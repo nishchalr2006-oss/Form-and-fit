@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, role?: UserRole) => Promise<{ success: boolean; message?: string }>;
   signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ success: boolean; message?: string }>;
   signInWithPassword: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  authenticateOwner: (email: string, passcode: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   setOwnerSession: () => void;
@@ -217,11 +218,72 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const authenticateOwner = async (email: string, passcode: string): Promise<{ success: boolean; message?: string }> => {
+    setLoading(true);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPasscode = passcode.trim();
+
+    // Check strict master admin credentials OR verified Supabase owner profile
+    const isMasterCredential = (cleanEmail === 'admin@formandfit.in' || cleanEmail === 'owner@formandfit.in') && cleanPasscode === 'FormFit2026!Admin';
+
+    if (isMasterCredential) {
+      const ownerProfile: UserProfile = {
+        id: 'owner_primary_account',
+        email: 'admin@formandfit.in',
+        full_name: 'Store Owner Admin',
+        role: 'owner',
+        created_at: new Date().toISOString(),
+      };
+      setUser(ownerProfile);
+      localStorage.setItem('form_fit_user_session', JSON.stringify(ownerProfile));
+      localStorage.setItem('form_fit_owner_mode', 'true');
+      setLoading(false);
+      return { success: true };
+    }
+
+    // Attempt Supabase owner authentication if configured
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password: cleanPasscode });
+        if (!error && data.user) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+          if (profileData && (profileData.role === 'owner' || profileData.role === 'admin')) {
+            const verifiedOwner: UserProfile = {
+              id: profileData.id,
+              email: profileData.email,
+              full_name: profileData.full_name || 'Store Owner',
+              role: profileData.role as UserRole,
+              created_at: profileData.created_at,
+            };
+            setUser(verifiedOwner);
+            localStorage.setItem('form_fit_user_session', JSON.stringify(verifiedOwner));
+            localStorage.setItem('form_fit_owner_mode', 'true');
+            setLoading(false);
+            return { success: true };
+          }
+        }
+      } catch (err) {
+        console.error('Owner auth check exception:', err);
+      }
+    }
+
+    setLoading(false);
+    return {
+      success: false,
+      message: 'Access Denied: Invalid Admin Credentials. Only approved store administrators may log in.',
+    };
+  };
+
   const setOwnerSession = () => {
     const ownerProfile: UserProfile = {
       id: 'owner_primary_account',
-      email: 'owner@formandfit.in',
-      full_name: 'Store Owner',
+      email: 'admin@formandfit.in',
+      full_name: 'Store Owner Admin',
       role: 'owner',
       created_at: new Date().toISOString(),
     };
@@ -263,6 +325,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         signUp,
         signInWithPassword,
+        authenticateOwner,
         logout,
         updateProfile,
         setOwnerSession,

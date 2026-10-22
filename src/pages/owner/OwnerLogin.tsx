@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
-import { ShieldCheck, KeyRound, Eye, EyeOff, ArrowRight, Lock, Sparkles } from 'lucide-react';
+import { ShieldCheck, KeyRound, Eye, EyeOff, ArrowRight, Lock, Mail, AlertCircle } from 'lucide-react';
 
 export const OwnerLogin: React.FC = () => {
-  const { setOwnerSession, isOwner } = useAuth();
+  const { authenticateOwner, isOwner } = useAuth();
   const navigate = useNavigate();
+
+  const [email, setEmail] = useState('admin@formandfit.in');
   const [passcode, setPasscode] = useState('');
   const [showPasscode, setShowPasscode] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,17 +20,24 @@ export const OwnerLogin: React.FC = () => {
     }
   }, [isOwner, navigate]);
 
-  const handleOwnerAccess = (e: React.FormEvent) => {
+  const handleOwnerAccess = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !passcode.trim()) {
+      setErrorMsg('Please enter both Admin Email and Passcode.');
+      return;
+    }
+
     setLoading(true);
     setErrorMsg('');
 
-    // Enable direct store owner authentication session
-    setTimeout(() => {
-      setOwnerSession();
-      setLoading(false);
+    const res = await authenticateOwner(email.trim(), passcode.trim());
+    setLoading(false);
+
+    if (res.success) {
       navigate('/owner/dashboard');
-    }, 400);
+    } else {
+      setErrorMsg(res.message || 'Access Denied: Invalid Admin Credentials.');
+    }
   };
 
   return (
@@ -44,31 +53,50 @@ export const OwnerLogin: React.FC = () => {
             <ShieldCheck size={32} />
           </div>
           <span className="font-space font-extrabold text-[10px] uppercase tracking-widest text-[#111111]/50 block">
-            FORM &amp; FIT MANAGEMENT PORTAL
+            FORM &amp; FIT SECURE ADMIN PORTAL
           </span>
           <h1 className="font-space font-extrabold text-2xl uppercase tracking-tight text-[#111111]">
-            Store Owner Sign In
+            Store Admin Authentication
           </h1>
           <p className="text-xs text-[#111111]/60 font-sans leading-relaxed">
-            Authorized administrative gateway to control products, pricing, inventory stock, customer orders, and store content.
+            Restricted access. Only approved store administrators with valid credentials can access store management controls.
           </p>
         </div>
 
         {errorMsg && (
-          <div className="p-3 bg-red-100 border border-red-400 text-red-800 text-xs font-space font-bold">
-            {errorMsg}
+          <div className="p-3 bg-red-100 border border-red-400 text-red-800 text-xs font-space font-bold flex items-center gap-2">
+            <AlertCircle size={16} className="shrink-0 text-red-600" />
+            <span>{errorMsg}</span>
           </div>
         )}
 
         <form onSubmit={handleOwnerAccess} className="space-y-4">
           <div className="space-y-1">
             <label className="block text-xs font-space font-bold uppercase text-[#111111]">
-              Owner Access Passcode
+              Admin Username / Email
+            </label>
+            <div className="relative">
+              <input
+                type="email"
+                required
+                placeholder="admin@formandfit.in"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs focus:outline-none focus:ring-1 focus:ring-[#111111]"
+              />
+              <Mail size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+              Admin Passcode
             </label>
             <div className="relative">
               <input
                 type={showPasscode ? 'text' : 'password'}
-                placeholder="Enter store owner passcode..."
+                required
+                placeholder="Enter Admin Passcode..."
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 pr-10 text-xs focus:outline-none focus:ring-1 focus:ring-[#111111]"
@@ -90,27 +118,16 @@ export const OwnerLogin: React.FC = () => {
             className="w-full py-3.5 bg-[#111111] text-[#C7F464] font-space font-extrabold text-xs uppercase tracking-widest hover:bg-[#C7F464] hover:text-[#111111] transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {loading ? (
-              <span className="animate-pulse">Verifying Credentials...</span>
+              <span className="animate-pulse">Authenticating Admin...</span>
             ) : (
               <>
-                Access Owner Dashboard <ArrowRight size={16} />
+                Log In To Admin Panel <ArrowRight size={16} />
               </>
             )}
           </button>
         </form>
 
-        <div className="pt-4 border-t border-[#111111]/10 text-center space-y-3">
-          <button
-            type="button"
-            onClick={() => {
-              setOwnerSession();
-              navigate('/owner/dashboard');
-            }}
-            className="w-full py-2.5 bg-[#C7F464] text-[#111111] font-space font-extrabold text-xs uppercase tracking-wider border border-[#111111] hover:bg-[#111111] hover:text-[#C7F464] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <Sparkles size={14} /> Quick-Login as Store Owner
-          </button>
-
+        <div className="pt-4 border-t border-[#111111]/10 text-center">
           <Link
             to="/"
             className="text-xs font-space font-bold uppercase text-[#111111]/60 hover:text-[#111111] block"
