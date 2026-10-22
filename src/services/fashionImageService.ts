@@ -179,3 +179,19 @@ export async function fetchFashionImages(
     };
   }
 }
+
+/**
+ * Diagnostic helper to inspect category image mapping without exposing secrets
+ */
+export function getCategoryDiagnostics(category: string) {
+  const fallback = CATEGORY_FALLBACK_PHOTOS[category];
+  const cached = clientCache[`${category}_1`]?.[0]?.url;
+  return {
+    categoryKey: category,
+    hasCategoryFallback: Boolean(fallback),
+    fallbackPhotoCount: fallback?.length || 0,
+    primaryImageUrl: cached || fallback?.[0]?.url || null,
+    imageAltText: fallback?.[0]?.alt || null,
+  };
+}
+

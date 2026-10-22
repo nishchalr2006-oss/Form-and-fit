@@ -53,8 +53,10 @@ const CATEGORY_FALLBACK_PHOTOS: Record<string, Array<{ id: string; url: string; 
 };
 
 export default async function handler(req: any, res: any) {
-  const category = (req.query.category as string) || 'hero-campaign';
-  const count = parseInt((req.query.count as string) || '8', 10);
+  const url = new URL(req.url || '', `http://${req.headers?.host || 'localhost'}`);
+  const category = (req.query?.category || url.searchParams.get('category')) || 'hero-campaign';
+  const countParam = req.query?.count || url.searchParams.get('count') || '8';
+  const count = parseInt(String(countParam), 10);
   const apiKey = process.env.PEXELS_API_KEY || process.env.VITE_PEXELS_API_KEY || '';
 
   const searchQuery = CATEGORY_SEARCH_QUERIES[category] || CATEGORY_SEARCH_QUERIES['hero-campaign'];
