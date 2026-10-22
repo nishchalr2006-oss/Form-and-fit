@@ -167,15 +167,20 @@ export const Navbar: React.FC = () => {
               )}
             </Link>
 
-            {/* Shopping Bag Icon */}
+            {/* Shopping Bag Icon - Instant Zero-Latency Response */}
             <button
-              onClick={() => setIsCartOpen(true)}
-              className="p-2 text-[#F7F6F2] hover:text-[#C7F464] transition-colors relative cursor-pointer"
-              aria-label="Shopping bag"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setIsCartOpen(true);
+              }}
+              className="p-2 text-[#F7F6F2] hover:text-[#C7F464] active:scale-90 transition-transform duration-100 relative cursor-pointer touch-manipulation select-none"
+              aria-label="Open shopping bag"
+              title="Shopping Bag"
             >
               <ShoppingBag size={20} />
               {totalCartCount > 0 && (
-                <span className="absolute top-1 right-1 bg-[#C7F464] text-[#111111] text-[10px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-[0_0_8px_#C7F464]">
+                <span className="absolute top-1 right-1 bg-[#C7F464] text-[#111111] text-[10px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-[0_0_8px_#C7F464] pointer-events-none">
                   {totalCartCount}
                 </span>
               )}
