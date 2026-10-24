@@ -16,6 +16,34 @@ body {
   overflow-x: hidden;
 }
 
+/* Universal Form Field Contrast Protection */
+input, textarea, select {
+  font-family: inherit;
+}
+
+input.bg-white,
+input[class*="bg-[#F7F6F2]"],
+input[class*="bg-[#E8E8E8]"],
+textarea.bg-white,
+textarea[class*="bg-[#F7F6F2]"],
+select.bg-white,
+.bg-white input,
+.bg-white textarea,
+.bg-white select {
+  color: #111111 !important;
+  -webkit-text-fill-color: #111111;
+}
+
+input[class*="bg-[#1A1A24]"],
+input[class*="bg-[#181822]"],
+input[class*="bg-[#0A0A0C]"],
+textarea[class*="bg-[#0A0A0C]"],
+select[class*="bg-[#0A0A0C]"],
+.glow-input {
+  color: #F7F6F2 !important;
+  -webkit-text-fill-color: #F7F6F2;
+}
+
 h1, h2, h3, h4, .font-heading {
   font-family: 'Space Grotesk', sans-serif;
 }
