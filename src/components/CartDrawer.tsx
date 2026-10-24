@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useStore } from '../context/StoreContext';
 import { X, Trash2, ShoppingBag, ArrowRight, Sparkles, Plus, Minus, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getFashionFallbackImage } from '../lib/imageOptimization';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -138,10 +139,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
               const itemPrice = item.custom_design_data?.total_price
                 ? item.custom_design_data.total_price
                 : item.variant.price_override || item.product.sale_price || item.product.regular_price;
+              const fallbackImg = getFashionFallbackImage(item.product?.name, item.product?.category?.name);
               const imageSrc =
-                item.variant.variant_image_url ||
-                item.product.images?.find((i) => i.is_main)?.url ||
-                item.product.images?.[0]?.url;
+                item.variant?.variant_image_url ||
+                item.product?.images?.find((i) => i.is_main)?.url ||
+                item.product?.images?.[0]?.url ||
+                fallbackImg;
 
               return (
                 <div
@@ -149,18 +152,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   className="flex gap-3 sm:gap-4 p-3 bg-[#181822] border border-white/10 hover:border-[#C7F464]/50 transition-colors rounded-xs relative group"
                 >
                   <div className="w-20 h-24 bg-[#0E0E12] border border-white/10 shrink-0 overflow-hidden relative rounded-xs">
-                    {imageSrc ? (
-                      <img
-                        src={imageSrc}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[10px] uppercase font-space text-white/40 text-center p-1">
-                        No Image
-                      </div>
-                    )}
+                    <img
+                      src={imageSrc}
+                      alt={item.product?.name || 'Product'}
+                      className="w-full h-full object-cover transition-opacity duration-300"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = fallbackImg;
+                      }}
+                    />
                     {item.custom_design_data && (
                       <span className="absolute top-1 left-1 bg-[#C7F464] text-[#111111] text-[9px] font-space font-extrabold uppercase px-1 py-0.5 rounded-xs">
                         Custom

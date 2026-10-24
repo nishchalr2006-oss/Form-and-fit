@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
 import { OwnerLayout } from '../../components/OwnerLayout';
 import { PlusCircle, Edit3, Trash2, Eye, EyeOff, Search, Package } from 'lucide-react';
+import { getFashionFallbackImage } from '../../lib/imageOptimization';
 
 export const OwnerProducts: React.FC = () => {
   const { products, toggleProductStatus, deleteProduct, categories } = useStore();
@@ -118,20 +119,22 @@ export const OwnerProducts: React.FC = () => {
                 <tbody className="divide-y divide-[#111111]/10">
                   {filteredProducts.map((p) => {
                     const totalStock = p.variants?.reduce((s, v) => s + v.stock_quantity, 0) || 0;
-                    const mainImg = p.images?.find((i) => i.is_main)?.url || p.images?.[0]?.url;
+                    const fallbackImg = getFashionFallbackImage(p.name, p.category?.name);
+                    const mainImg = p.images?.find((i) => i.is_main)?.url || p.images?.[0]?.url || fallbackImg;
 
                     return (
                       <tr key={p.id} className="hover:bg-[#F7F6F2]">
                         <td className="p-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-12 bg-[#E8E8E8] border shrink-0 overflow-hidden">
-                              {mainImg ? (
-                                <img src={mainImg} alt={p.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[8px] uppercase text-[#111111]/40">
-                                  No Img
-                                </div>
-                              )}
+                              <img
+                                src={mainImg}
+                                alt={p.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = fallbackImg;
+                                }}
+                              />
                             </div>
                             <div>
                               <p className="font-space font-bold text-sm text-[#111111]">{p.name}</p>

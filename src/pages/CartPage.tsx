@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { Trash2, ArrowRight, ShoppingBag, ShieldCheck, Tag } from 'lucide-react';
+import { getFashionFallbackImage } from '../lib/imageOptimization';
 
 export const CartPage: React.FC = () => {
   const { cart, updateCartQuantity, removeFromCart, applyCoupon, appliedCoupon, removeCoupon, storeSettings } = useStore();
@@ -74,22 +75,25 @@ export const CartPage: React.FC = () => {
             const itemPrice = item.custom_design_data?.total_price
               ? item.custom_design_data.total_price
               : item.variant.price_override || item.product.sale_price || item.product.regular_price;
+            const fallbackImg = getFashionFallbackImage(item.product?.name, item.product?.category?.name);
             const imageSrc =
-              item.variant.variant_image_url ||
-              item.product.images?.find((i) => i.is_main)?.url ||
-              item.product.images?.[0]?.url;
+              item.variant?.variant_image_url ||
+              item.product?.images?.find((i) => i.is_main)?.url ||
+              item.product?.images?.[0]?.url ||
+              fallbackImg;
 
             return (
               <div key={item.id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between">
                 <div className="flex gap-4 items-center flex-1">
                   <div className="w-20 h-24 bg-[#E8E8E8] shrink-0 overflow-hidden relative border border-[#111111]/10">
-                    {imageSrc ? (
-                      <img src={imageSrc} alt={item.product.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[10px] uppercase font-space text-[#111111]/40 text-center p-1">
-                        No Photo
-                      </div>
-                    )}
+                    <img
+                      src={imageSrc}
+                      alt={item.product?.name || 'Product'}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = fallbackImg;
+                      }}
+                    />
                   </div>
 
                   <div className="space-y-1">

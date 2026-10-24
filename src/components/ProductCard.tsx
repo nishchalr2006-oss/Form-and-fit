@@ -4,6 +4,7 @@ import { Product } from '../types';
 import { useStore } from '../context/StoreContext';
 import { ImagePlaceholder } from './ImagePlaceholder';
 import { Heart } from 'lucide-react';
+import { getFashionFallbackImage } from '../lib/imageOptimization';
 
 interface ProductCardProps {
   product: Product;
@@ -14,7 +15,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const inWishlist = isInWishlist(product.id);
 
   // Main & hover images
-  const mainImage = product.images?.find((i) => i.is_main)?.url || product.images?.[0]?.url;
+  const fallbackUrl = getFashionFallbackImage(product.name, product.category?.name);
+  const mainImage =
+    product.images?.find((i) => i.is_main)?.url ||
+    product.images?.[0]?.url ||
+    product.variants?.find((v) => v.variant_image_url)?.variant_image_url ||
+    fallbackUrl;
   const secondaryImage = product.images?.[1]?.url;
 
   // Available stock
@@ -32,17 +38,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Image Container */}
         <div className="relative aspect-[3/4] bg-[#1A1A20] overflow-hidden">
           <Link to={`/product/${product.slug}`} className="block w-full h-full">
-            {mainImage ? (
-              <img
-                src={mainImage}
-                alt={product.name}
-                className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
-                  secondaryImage ? 'group-hover:opacity-0' : ''
-                }`}
-              />
-            ) : (
-              <ImagePlaceholder title={product.name} />
-            )}
+            <img
+              src={mainImage}
+              alt={product.name}
+              className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+                secondaryImage ? 'group-hover:opacity-0' : ''
+              }`}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = fallbackUrl;
+              }}
+            />
 
             {secondaryImage && (
               <img

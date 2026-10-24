@@ -23,6 +23,7 @@ import {
   INITIAL_PRODUCTS,
 } from '../data/initialData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { generateUUID, getFashionFallbackImage } from '../lib/imageOptimization';
 
 interface InventoryLog {
   id: string;
@@ -92,11 +93,46 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
+function safeStorageSet(key: string, value: any) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    console.warn(`LocalStorage write warning for ${key}:`, err);
+  }
+}
+
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load local persistent states
+  // Load local persistent states with automatic product image auto-healing
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('form_fit_products');
-    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+    if (!saved) return INITIAL_PRODUCTS;
+    try {
+      const parsed: Product[] = JSON.parse(saved);
+      // Auto-heal products that may have empty images from prior failed uploads
+      return parsed.map((p) => {
+        if (!p.images || p.images.length === 0 || !p.images.some((i) => Boolean(i.url))) {
+          const fallbackUrl = getFashionFallbackImage(p.name, p.category?.name);
+          const healedImage = {
+            id: generateUUID(),
+            product_id: p.id,
+            url: fallbackUrl,
+            is_main: true,
+            display_order: 0,
+          };
+          return {
+            ...p,
+            images: [healedImage],
+            variants: (p.variants || []).map((v) => ({
+              ...v,
+              variant_image_url: v.variant_image_url || fallbackUrl,
+            })),
+          };
+        }
+        return p;
+      });
+    } catch {
+      return INITIAL_PRODUCTS;
+    }
   });
 
   const [categories, setCategories] = useState<Category[]>(() => {
@@ -106,7 +142,43 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('form_fit_cart');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    try {
+      const parsed: CartItem[] = JSON.parse(saved);
+      // Auto-heal cart item images if empty
+      return parsed.map((item) => {
+        const fallbackUrl = getFashionFallbackImage(item.product?.name, item.product?.category?.name);
+        const resolvedUrl =
+          item.variant?.variant_image_url ||
+          item.product?.images?.find((i) => i.is_main)?.url ||
+          item.product?.images?.[0]?.url ||
+          fallbackUrl;
+        return {
+          ...item,
+          variant: {
+            ...item.variant,
+            variant_image_url: item.variant?.variant_image_url || resolvedUrl,
+          },
+          product: {
+            ...item.product,
+            images:
+              item.product?.images && item.product.images.length > 0 && item.product.images.some((i) => Boolean(i.url))
+                ? item.product.images
+                : [
+                    {
+                      id: generateUUID(),
+                      product_id: item.product?.id || 'prod',
+                      url: resolvedUrl,
+                      is_main: true,
+                      display_order: 0,
+                    },
+                  ],
+          },
+        };
+      });
+    } catch {
+      return [];
+    }
   });
 
   const [wishlist, setWishlist] = useState<WishlistItem[]>(() => {
@@ -147,33 +219,33 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Sync state to LocalStorage
+  // Sync state to LocalStorage with quota protection
   useEffect(() => {
-    localStorage.setItem('form_fit_products', JSON.stringify(products));
+    safeStorageSet('form_fit_products', products);
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem('form_fit_categories', JSON.stringify(categories));
+    safeStorageSet('form_fit_categories', categories);
   }, [categories]);
 
   useEffect(() => {
-    localStorage.setItem('form_fit_cart', JSON.stringify(cart));
+    safeStorageSet('form_fit_cart', cart);
   }, [cart]);
 
   useEffect(() => {
-    localStorage.setItem('form_fit_wishlist', JSON.stringify(wishlist));
+    safeStorageSet('form_fit_wishlist', wishlist);
   }, [wishlist]);
 
   useEffect(() => {
-    localStorage.setItem('form_fit_orders', JSON.stringify(orders));
+    safeStorageSet('form_fit_orders', orders);
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('form_fit_store_settings', JSON.stringify(storeSettings));
+    safeStorageSet('form_fit_store_settings', storeSettings);
   }, [storeSettings]);
 
   useEffect(() => {
-    localStorage.setItem('form_fit_inventory_logs', JSON.stringify(inventoryLogs));
+    safeStorageSet('form_fit_inventory_logs', inventoryLogs);
   }, [inventoryLogs]);
 
   // Load from Supabase if configured
@@ -236,14 +308,63 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Product Operations
   const saveProduct = async (productData: Partial<Product>): Promise<Product> => {
     const isEditing = Boolean(productData.id);
-    const productId = productData.id || `prod_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const productId = productData.id || generateUUID();
     const now = new Date().toISOString();
+
+    // Ensure product always has at least one valid image
+    let productImages = productData.images || [];
+    if (productImages.length === 0 || !productImages.some((i) => Boolean(i.url))) {
+      const fallbackUrl = getFashionFallbackImage(productData.name, categories.find((c) => c.id === productData.category_id)?.name);
+      productImages = [
+        {
+          id: generateUUID(),
+          product_id: productId,
+          url: fallbackUrl,
+          is_main: true,
+          display_order: 0,
+        },
+      ];
+    } else {
+      productImages = productImages.map((img, idx) => ({
+        ...img,
+        id: img.id || generateUUID(),
+        product_id: productId,
+        is_main: img.is_main ?? idx === 0,
+        display_order: img.display_order ?? idx,
+      }));
+    }
+
+    const mainImgUrl = productImages.find((i) => i.is_main)?.url || productImages[0]?.url;
+
+    // Ensure variants have valid IDs and carry the photo URL
+    let productVariants = productData.variants || [];
+    if (productVariants.length === 0) {
+      productVariants = [
+        {
+          id: generateUUID(),
+          product_id: productId,
+          sku: `SKU-${Date.now().toString().slice(-4)}`,
+          size: 'M',
+          color: 'Standard',
+          stock_quantity: 10,
+          is_active: true,
+          variant_image_url: mainImgUrl,
+        },
+      ];
+    } else {
+      productVariants = productVariants.map((v, idx) => ({
+        ...v,
+        id: v.id || generateUUID(),
+        product_id: productId,
+        variant_image_url: v.variant_image_url || (idx === 0 ? mainImgUrl : undefined),
+      }));
+    }
 
     const fullProduct: Product = {
       id: productId,
       name: productData.name || 'New Fashion Piece',
       slug: productData.slug || (productData.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      sku: productData.sku || `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
+      sku: productData.sku || `FF-${Math.floor(100000 + Math.random() * 900000)}`,
       short_desc: productData.short_desc || '',
       description: productData.description || '',
       category_id: productData.category_id,
@@ -260,8 +381,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       seo_description: productData.seo_description || productData.short_desc,
       created_at: productData.created_at || now,
       updated_at: now,
-      images: productData.images || [],
-      variants: productData.variants || [],
+      images: productImages,
+      variants: productVariants,
       category: categories.find((c) => c.id === productData.category_id),
     };
 
@@ -280,11 +401,11 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           sku: fullProduct.sku,
           short_desc: fullProduct.short_desc,
           description: fullProduct.description,
-          category_id: fullProduct.category_id,
+          category_id: fullProduct.category_id || null,
           gender_collection: fullProduct.gender_collection,
           regular_price: fullProduct.regular_price,
-          sale_price: fullProduct.sale_price,
-          cost_price: fullProduct.cost_price,
+          sale_price: fullProduct.sale_price || null,
+          cost_price: fullProduct.cost_price || null,
           fabric_material: fullProduct.fabric_material,
           fit: fullProduct.fit,
           care_instructions: fullProduct.care_instructions,
@@ -304,7 +425,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               id: img.id,
               product_id: productId,
               url: img.url,
-              storage_path: img.storage_path,
+              storage_path: img.storage_path || null,
               is_main: img.is_main,
               display_order: img.display_order,
             });
@@ -318,11 +439,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               id: v.id,
               product_id: productId,
               sku: v.sku,
-              size: v.size,
-              color: v.color,
-              color_hex: v.color_hex,
-              price_override: v.price_override,
+              size: v.size || null,
+              color: v.color || null,
+              color_hex: v.color_hex || null,
+              price_override: v.price_override || null,
               stock_quantity: v.stock_quantity,
+              variant_image_url: v.variant_image_url || null,
               is_active: v.is_active,
             });
           }
@@ -432,9 +554,38 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Cart Operations
   const addToCart = (product: Product, variant: ProductVariant, quantity = 1, customDesign?: CustomDesignData) => {
+    // Ensure product and variant always carry an image URL
+    const fallbackUrl = getFashionFallbackImage(product.name, product.category?.name);
+    const resolvedImgUrl =
+      variant.variant_image_url ||
+      product.images?.find((i) => i.is_main)?.url ||
+      product.images?.[0]?.url ||
+      fallbackUrl;
+
+    const safeVariant: ProductVariant = {
+      ...variant,
+      variant_image_url: variant.variant_image_url || resolvedImgUrl,
+    };
+
+    const safeProduct: Product = {
+      ...product,
+      images:
+        product.images && product.images.length > 0 && product.images.some((i) => Boolean(i.url))
+          ? product.images
+          : [
+              {
+                id: generateUUID(),
+                product_id: product.id,
+                url: resolvedImgUrl,
+                is_main: true,
+                display_order: 0,
+              },
+            ],
+    };
+
     setCart((prev) => {
       const existingIndex = prev.findIndex(
-        (item) => item.variant.id === variant.id && JSON.stringify(item.custom_design_data) === JSON.stringify(customDesign)
+        (item) => item.variant.id === safeVariant.id && JSON.stringify(item.custom_design_data) === JSON.stringify(customDesign)
       );
 
       if (existingIndex > -1) {
@@ -442,16 +593,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const newQty = updated[existingIndex].quantity + quantity;
         updated[existingIndex] = {
           ...updated[existingIndex],
-          quantity: Math.min(newQty, variant.stock_quantity || 99),
+          product: safeProduct,
+          variant: safeVariant,
+          quantity: Math.min(newQty, safeVariant.stock_quantity || 99),
         };
         return updated;
       }
 
       const newItem: CartItem = {
         id: `cart_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        product,
-        variant,
-        quantity: Math.min(quantity, variant.stock_quantity || 99),
+        product: safeProduct,
+        variant: safeVariant,
+        quantity: Math.min(quantity, safeVariant.stock_quantity || 99),
         custom_design_data: customDesign,
       };
 

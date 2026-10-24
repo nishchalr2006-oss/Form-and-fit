@@ -4,6 +4,7 @@ import { useStore } from '../context/StoreContext';
 import { ProductCard } from '../components/ProductCard';
 import { ImagePlaceholder } from '../components/ImagePlaceholder';
 import { ProductVariant } from '../types';
+import { getFashionFallbackImage } from '../lib/imageOptimization';
 import {
   Heart,
   ShoppingBag,
@@ -56,7 +57,8 @@ export const ProductDetail: React.FC = () => {
 
   const inWishlist = isInWishlist(product.id);
   const images = product.images || [];
-  const currentImage = images[selectedImageIndex]?.url;
+  const fallbackUrl = getFashionFallbackImage(product.name, product.category?.name);
+  const currentImage = images[selectedImageIndex]?.url || selectedVariant?.variant_image_url || images[0]?.url || fallbackUrl;
 
   // Calculate pricing
   const currentPrice = selectedVariant?.price_override || product.sale_price || product.regular_price;
@@ -111,15 +113,14 @@ export const ProductDetail: React.FC = () => {
         {/* Left Gallery */}
         <div className="space-y-4">
           <div className="aspect-[3/4] bg-[#E8E8E8] border border-[#111111]/10 relative overflow-hidden">
-            {currentImage ? (
-              <img
-                src={currentImage}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <ImagePlaceholder title={product.name} />
-            )}
+            <img
+              src={currentImage}
+              alt={product.name}
+              className="w-full h-full object-cover transition-opacity duration-300"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = fallbackUrl;
+              }}
+            />
 
             {isSale && (
               <span className="absolute top-4 left-4 bg-[#111111] text-[#C7F464] font-space font-bold text-xs uppercase px-3 py-1">
@@ -139,7 +140,14 @@ export const ProductDetail: React.FC = () => {
                     selectedImageIndex === idx ? 'border-2 border-[#111111]' : 'border-[#111111]/20 opacity-70'
                   }`}
                 >
-                  <img src={img.url} alt="Thumbnail" className="w-full h-full object-cover" />
+                  <img
+                    src={img.url}
+                    alt="Thumbnail"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = fallbackUrl;
+                    }}
+                  />
                 </button>
               ))}
             </div>

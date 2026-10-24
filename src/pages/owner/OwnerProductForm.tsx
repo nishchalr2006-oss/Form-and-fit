@@ -5,6 +5,11 @@ import { OwnerLayout } from '../../components/OwnerLayout';
 import { Product, ProductImage, ProductVariant, GenderCollection, ProductStatus } from '../../types';
 import { uploadProductImage } from '../../lib/supabase';
 import {
+  generateUUID,
+  FASHION_PRESETS,
+  getFashionFallbackImage,
+} from '../../lib/imageOptimization';
+import {
   Upload,
   Plus,
   Trash2,
@@ -13,6 +18,10 @@ import {
   ArrowLeft,
   Image as ImageIcon,
   Save,
+  Link as LinkIcon,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const OwnerProductForm: React.FC = () => {
@@ -47,14 +56,48 @@ export const OwnerProductForm: React.FC = () => {
   const [images, setImages] = useState<ProductImage[]>(existingProduct?.images || []);
   const [variants, setVariants] = useState<ProductVariant[]>(
     existingProduct?.variants || [
-      { id: `v_1`, product_id: '', sku: 'SKU-S', size: 'S', color: 'Black', stock_quantity: 10, is_active: true },
-      { id: `v_2`, product_id: '', sku: 'SKU-M', size: 'M', color: 'Black', stock_quantity: 15, is_active: true },
-      { id: `v_3`, product_id: '', sku: 'SKU-L', size: 'L', color: 'Black', stock_quantity: 20, is_active: true },
+      { id: generateUUID(), product_id: '', sku: 'SKU-S', size: 'S', color: 'Black', stock_quantity: 10, is_active: true },
+      { id: generateUUID(), product_id: '', sku: 'SKU-M', size: 'M', color: 'Black', stock_quantity: 15, is_active: true },
+      { id: generateUUID(), product_id: '', sku: 'SKU-L', size: 'L', color: 'Black', stock_quantity: 20, is_active: true },
     ]
   );
 
+  // Image Upload & URL states
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
+  const [showPresets, setShowPresets] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync state if existingProduct loads asynchronously
+  useEffect(() => {
+    if (existingProduct) {
+      setName(existingProduct.name || '');
+      setSlug(existingProduct.slug || '');
+      setSku(existingProduct.sku || '');
+      setShortDesc(existingProduct.short_desc || '');
+      setDescription(existingProduct.description || '');
+      setCategoryId(existingProduct.category_id || categories[0]?.id || '');
+      setGenderCollection(existingProduct.gender_collection || 'Unisex');
+      setRegularPrice(existingProduct.regular_price || 999);
+      setSalePrice(existingProduct.sale_price);
+      setCostPrice(existingProduct.cost_price);
+      setFabricMaterial(existingProduct.fabric_material || '');
+      setFit(existingProduct.fit || '');
+      setCareInstructions(existingProduct.care_instructions || '');
+      setStatus(existingProduct.status || 'published');
+      setFeatured(existingProduct.featured || false);
+      setSeoTitle(existingProduct.seo_title || '');
+      setSeoDescription(existingProduct.seo_description || '');
+      if (existingProduct.images && existingProduct.images.length > 0) {
+        setImages(existingProduct.images);
+      }
+      if (existingProduct.variants && existingProduct.variants.length > 0) {
+        setVariants(existingProduct.variants);
+      }
+    }
+  }, [existingProduct]);
 
   // Auto slug generation from name
   const handleNameChange = (val: string) => {
@@ -64,28 +107,120 @@ export const OwnerProductForm: React.FC = () => {
     }
   };
 
-  // Image Upload
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  // Image File Upload with optimization & fallback
+  const processFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
+    setUploadFeedback({ type: 'info', text: 'Optimizing and uploading photography...' });
+
+    const newImagesList: ProductImage[] = [];
+    let successCount = 0;
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const res = await uploadProductImage(file);
-      if (res) {
-        const newImg: ProductImage = {
-          id: `img_${Date.now()}_${i}`,
-          product_id: existingProduct?.id || '',
-          url: res.url,
-          storage_path: res.path,
-          is_main: images.length === 0 && i === 0,
-          display_order: images.length + i,
-        };
-        setImages((prev) => [...prev, newImg]);
+      try {
+        const res = await uploadProductImage(file);
+        if (res && res.url) {
+          const newImg: ProductImage = {
+            id: generateUUID(),
+            product_id: existingProduct?.id || '',
+            url: res.url,
+            storage_path: res.path,
+            is_main: images.length === 0 && newImagesList.length === 0,
+            display_order: images.length + newImagesList.length,
+          };
+          newImagesList.push(newImg);
+          successCount++;
+        }
+      } catch (err) {
+        console.error('File upload error:', err);
       }
     }
+
+    if (newImagesList.length > 0) {
+      setImages((prev) => {
+        const updated = [...prev, ...newImagesList];
+        // Ensure at least one image has is_main
+        if (!updated.some((img) => img.is_main)) {
+          updated[0].is_main = true;
+        }
+        return updated;
+      });
+
+      // Also sync first variant image if empty
+      setVariants((prev) =>
+        prev.map((v, idx) =>
+          idx === 0 && !v.variant_image_url ? { ...v, variant_image_url: newImagesList[0].url } : v
+        )
+      );
+
+      setUploadFeedback({
+        type: 'success',
+        text: `Successfully added ${successCount} high-res product photo(s)!`,
+      });
+    } else {
+      setUploadFeedback({
+        type: 'error',
+        text: 'Could not process selected image file(s). Please try another format or URL.',
+      });
+    }
+
     setIsUploading(false);
+    setTimeout(() => setUploadFeedback(null), 5000);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(e.target.files);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  };
+
+  // Add Image via Direct Web URL
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://') && !trimmed.startsWith('data:image')) {
+      setUploadFeedback({ type: 'error', text: 'Please enter a valid HTTP/HTTPS image URL.' });
+      return;
+    }
+
+    const newImg: ProductImage = {
+      id: generateUUID(),
+      product_id: existingProduct?.id || '',
+      url: trimmed,
+      is_main: images.length === 0,
+      display_order: images.length,
+    };
+
+    setImages((prev) => [...prev, newImg]);
+    setImageUrlInput('');
+    setUploadFeedback({ type: 'success', text: 'Image URL added to gallery!' });
+    setTimeout(() => setUploadFeedback(null), 4000);
+  };
+
+  // Add Curated Preset Image
+  const handleSelectPreset = (presetUrl: string) => {
+    const newImg: ProductImage = {
+      id: generateUUID(),
+      product_id: existingProduct?.id || '',
+      url: presetUrl,
+      is_main: images.length === 0,
+      display_order: images.length,
+    };
+    setImages((prev) => [...prev, newImg]);
+    setShowPresets(false);
+    setUploadFeedback({ type: 'success', text: 'Curated studio fashion photo added!' });
+    setTimeout(() => setUploadFeedback(null), 4000);
   };
 
   const setMainImage = (imgId: string) => {
@@ -95,22 +230,36 @@ export const OwnerProductForm: React.FC = () => {
         is_main: img.id === imgId,
       }))
     );
+    // Sync with default variant
+    const targetImg = images.find((i) => i.id === imgId);
+    if (targetImg) {
+      setVariants((prev) =>
+        prev.map((v, idx) => (idx === 0 ? { ...v, variant_image_url: targetImg.url } : v))
+      );
+    }
   };
 
   const removeImage = (imgId: string) => {
-    setImages((prev) => prev.filter((img) => img.id !== imgId));
+    setImages((prev) => {
+      const filtered = prev.filter((img) => img.id !== imgId);
+      if (filtered.length > 0 && !filtered.some((i) => i.is_main)) {
+        filtered[0].is_main = true;
+      }
+      return filtered;
+    });
   };
 
   // Variant operations
   const addVariantRow = () => {
     const newV: ProductVariant = {
-      id: `v_${Date.now()}`,
+      id: generateUUID(),
       product_id: existingProduct?.id || '',
       sku: `SKU-${Date.now().toString().slice(-4)}`,
       size: 'M',
-      color: 'Standard',
+      color: 'Black',
       stock_quantity: 10,
       is_active: true,
+      variant_image_url: images.find((i) => i.is_main)?.url || images[0]?.url,
     };
     setVariants((prev) => [...prev, newV]);
   };
@@ -133,11 +282,33 @@ export const OwnerProductForm: React.FC = () => {
 
     setIsSaving(true);
 
+    // If no images were uploaded, auto-assign a smart fashion fallback photo so the product never renders with "NO IMAGE"
+    let finalImages = [...images];
+    if (finalImages.length === 0) {
+      const fallbackUrl = getFashionFallbackImage(name, categories.find((c) => c.id === categoryId)?.name);
+      finalImages = [
+        {
+          id: generateUUID(),
+          product_id: existingProduct?.id || '',
+          url: fallbackUrl,
+          is_main: true,
+          display_order: 0,
+        },
+      ];
+    }
+
+    // Ensure main image is synced to the first variant
+    const mainImageUrl = finalImages.find((i) => i.is_main)?.url || finalImages[0]?.url;
+    const syncedVariants = variants.map((v, idx) => ({
+      ...v,
+      variant_image_url: v.variant_image_url || (idx === 0 ? mainImageUrl : undefined),
+    }));
+
     const productPayload: Partial<Product> = {
       id: existingProduct?.id,
       name: name.trim(),
       slug: slug.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      sku: sku.trim() || `SKU-${Math.floor(100000 + Math.random() * 900000)}`,
+      sku: sku.trim() || `FF-${Math.floor(100000 + Math.random() * 900000)}`,
       short_desc: shortDesc.trim(),
       description: description.trim(),
       category_id: categoryId,
@@ -152,8 +323,8 @@ export const OwnerProductForm: React.FC = () => {
       featured,
       seo_title: seoTitle.trim() || name.trim(),
       seo_description: seoDescription.trim() || shortDesc.trim(),
-      images,
-      variants,
+      images: finalImages,
+      variants: syncedVariants,
     };
 
     await saveProduct(productPayload);
@@ -164,7 +335,8 @@ export const OwnerProductForm: React.FC = () => {
   return (
     <OwnerLayout>
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="flex justify-between items-center border-b border-[#111111]/15 pb-4">
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#111111]/15 pb-4">
           <div className="flex items-center gap-3">
             <Link
               to="/owner/products"
@@ -174,7 +346,7 @@ export const OwnerProductForm: React.FC = () => {
             </Link>
             <div>
               <span className="text-[10px] font-space font-bold uppercase tracking-widest text-[#111111]/50">
-                {existingProduct ? 'Edit Existing Product' : 'New Apparel Upload'}
+                {existingProduct ? 'Edit Apparel Item' : 'New Apparel Upload'}
               </span>
               <h1 className="font-space font-extrabold text-2xl uppercase tracking-tight text-[#111111]">
                 {name || 'New Fashion Piece'}
@@ -182,7 +354,7 @@ export const OwnerProductForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as ProductStatus)}
@@ -196,12 +368,34 @@ export const OwnerProductForm: React.FC = () => {
             <button
               type="submit"
               disabled={isSaving}
-              className="px-6 py-2.5 bg-[#111111] text-[#C7F464] font-space font-bold text-xs uppercase tracking-widest hover:bg-[#C7F464] hover:text-[#111111] transition-colors flex items-center gap-2 cursor-pointer"
+              className="px-6 py-2.5 bg-[#111111] text-[#C7F464] font-space font-bold text-xs uppercase tracking-widest hover:bg-[#C7F464] hover:text-[#111111] transition-colors flex items-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
             >
               <Save size={16} /> {isSaving ? 'Saving...' : 'Save Product'}
             </button>
           </div>
         </div>
+
+        {/* Feedback Banner */}
+        {uploadFeedback && (
+          <div
+            className={`p-3 text-xs font-space flex items-center gap-2 border transition-all ${
+              uploadFeedback.type === 'success'
+                ? 'bg-emerald-50 border-emerald-500 text-emerald-900'
+                : uploadFeedback.type === 'error'
+                ? 'bg-red-50 border-red-500 text-red-900'
+                : 'bg-blue-50 border-blue-500 text-blue-900'
+            }`}
+          >
+            {uploadFeedback.type === 'success' ? (
+              <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+            ) : uploadFeedback.type === 'error' ? (
+              <AlertCircle size={16} className="text-red-600 shrink-0" />
+            ) : (
+              <Sparkles size={16} className="text-blue-600 shrink-0" />
+            )}
+            <span>{uploadFeedback.text}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Details */}
@@ -219,7 +413,7 @@ export const OwnerProductForm: React.FC = () => {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Heavyweight Boxy Fit Tee"
+                    placeholder="e.g. Heavyweight Boxy Fit Tee / Oxford Shirt"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 text-xs focus:outline-none"
@@ -282,79 +476,189 @@ export const OwnerProductForm: React.FC = () => {
               </div>
             </div>
 
-            {/* Product Photography Uploader */}
+            {/* Product Photography Uploader & Media Hub */}
             <div className="bg-white border border-[#111111]/15 p-6 space-y-4">
-              <div className="flex justify-between items-center border-b border-[#111111]/10 pb-3">
-                <h3 className="font-space font-bold text-sm uppercase tracking-wider text-[#111111]">
-                  Product Photography ({images.length})
-                </h3>
-                <span className="text-[10px] text-[#111111]/60 font-mono">
-                  Supported: WebP, PNG, JPEG
-                </span>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-[#111111]/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <ImageIcon size={18} className="text-[#111111]" />
+                  <h3 className="font-space font-bold text-sm uppercase tracking-wider text-[#111111]">
+                    Product Photography ({images.length})
+                  </h3>
+                  {images.length > 0 && (
+                    <span className="text-[10px] bg-[#C7F464] text-[#111111] font-space font-bold px-2 py-0.5 uppercase">
+                      Ready for Live Store
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPresets(!showPresets)}
+                    className="px-2.5 py-1 text-[11px] font-space font-bold uppercase border border-[#111111] bg-white hover:bg-[#111111] hover:text-[#C7F464] transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles size={12} /> {showPresets ? 'Hide Studio Presets' : 'Studio Preset Library'}
+                  </button>
+                </div>
               </div>
 
-              {/* Upload Box */}
-              <div className="border-2 border-dashed border-[#111111]/30 p-6 text-center space-y-3 bg-[#F7F6F2]">
-                <Upload size={32} className="mx-auto text-[#111111]/40" />
-                <p className="text-xs font-space font-bold uppercase">
-                  {isUploading ? 'Uploading Images to Supabase...' : 'Upload Owner Product Photos'}
-                </p>
+              {/* Curated Studio Presets Drawer */}
+              {showPresets && (
+                <div className="p-4 bg-[#0A0A0C] border border-[#C7F464]/30 rounded-xs space-y-3">
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-space font-bold uppercase text-[#C7F464]">
+                      Select Professional Studio Fashion Photo:
+                    </p>
+                    <span className="text-[10px] text-white/50 font-mono">Instant 1-Click Addition</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                    {FASHION_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleSelectPreset(preset.url)}
+                        className="group relative aspect-[3/4] bg-[#181820] border border-white/20 hover:border-[#C7F464] overflow-hidden text-left cursor-pointer transition-all"
+                      >
+                        <img
+                          src={preset.thumb}
+                          alt={preset.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+                          <p className="text-[10px] text-white font-space font-bold truncate">{preset.name}</p>
+                          <p className="text-[9px] text-[#C7F464] font-mono">{preset.category}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Dropzone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed p-6 text-center space-y-3 transition-colors ${
+                  isDragOver ? 'border-[#C7F464] bg-[#C7F464]/10' : 'border-[#111111]/30 bg-[#F7F6F2]'
+                }`}
+              >
+                <Upload size={32} className={`mx-auto ${isDragOver ? 'text-[#111111]' : 'text-[#111111]/40'}`} />
+                <div className="space-y-1">
+                  <p className="text-xs font-space font-bold uppercase text-[#111111]">
+                    {isUploading ? 'Optimizing & Uploading Photos...' : 'Drag & Drop Device Photos or Browse'}
+                  </p>
+                  <p className="text-[10px] text-[#111111]/60 font-sans">
+                    Auto-compressed to ultra-sharp 1200x1600 WebP (fits instantly in store &amp; cloud)
+                  </p>
+                </div>
+
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
-                  onChange={handleFileUpload}
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+                  onChange={handleFileInputChange}
                   className="hidden"
                   id="image-upload-input"
+                  disabled={isUploading}
                 />
                 <label
                   htmlFor="image-upload-input"
-                  className="inline-block px-4 py-2 bg-[#111111] text-[#C7F464] font-space text-xs font-bold uppercase tracking-wider cursor-pointer hover:bg-[#C7F464] hover:text-[#111111] transition-colors"
+                  className="inline-block px-5 py-2.5 bg-[#111111] text-[#C7F464] font-space text-xs font-bold uppercase tracking-wider cursor-pointer hover:bg-[#C7F464] hover:text-[#111111] transition-colors shadow-sm"
                 >
-                  Select Photos
+                  {isUploading ? 'Processing...' : 'Browse Device Photos'}
                 </label>
               </div>
 
-              {/* Uploaded Images List */}
-              {images.length > 0 && (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 pt-2">
-                  {images.map((img) => (
-                    <div
-                      key={img.id}
-                      className={`relative aspect-[3/4] bg-[#E8E8E8] border group overflow-hidden ${
-                        img.is_main ? 'border-2 border-[#111111]' : 'border-[#111111]/20'
-                      }`}
-                    >
-                      <img src={img.url} alt="Product" className="w-full h-full object-cover" />
+              {/* Add via Direct Web URL */}
+              <div className="bg-[#F7F6F2] border border-[#111111]/15 p-3 flex flex-col sm:flex-row gap-2 items-center">
+                <div className="relative flex-1 w-full">
+                  <input
+                    type="url"
+                    placeholder="Or paste direct image URL (https://...)"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddImageUrl();
+                      }
+                    }}
+                    className="w-full bg-white border border-[#111111] px-3 py-2 text-xs font-mono pl-8 focus:outline-none"
+                  />
+                  <LinkIcon size={14} className="absolute left-2.5 top-2.5 text-[#111111]/40" />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="px-4 py-2 bg-[#111111] text-white font-space text-xs font-bold uppercase tracking-wider hover:bg-[#C7F464] hover:text-[#111111] transition-colors shrink-0 w-full sm:w-auto cursor-pointer"
+                >
+                  Add Image URL
+                </button>
+              </div>
 
-                      {img.is_main && (
-                        <span className="absolute top-1 left-1 bg-[#111111] text-[#C7F464] text-[9px] font-space font-bold uppercase px-1.5 py-0.5">
-                          MAIN PHOTO
-                        </span>
-                      )}
+              {/* Uploaded Images Gallery Grid */}
+              {images.length > 0 ? (
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs font-space font-bold uppercase text-[#111111]/70">
+                    Product Gallery ({images.length} photo{images.length > 1 ? 's' : ''})
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {images.map((img, idx) => (
+                      <div
+                        key={img.id || idx}
+                        className={`relative aspect-[3/4] bg-[#E8E8E8] border group overflow-hidden shadow-sm ${
+                          img.is_main ? 'border-2 border-[#111111] ring-2 ring-[#C7F464]' : 'border-[#111111]/20'
+                        }`}
+                      >
+                        <img
+                          src={img.url}
+                          alt="Product thumbnail"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // If URL fails, replace with smart fallback
+                            (e.currentTarget as HTMLImageElement).src = getFashionFallbackImage(name);
+                          }}
+                        />
 
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                        <button
-                          type="button"
-                          onClick={() => removeImage(img.id)}
-                          className="self-end p-1 bg-red-600 text-white rounded-none cursor-pointer"
-                          title="Remove image"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        {img.is_main && (
+                          <div className="absolute top-1 left-1 bg-[#111111] text-[#C7F464] text-[9px] font-space font-extrabold uppercase px-1.5 py-0.5 shadow-md flex items-center gap-1">
+                            <Star size={10} className="fill-[#C7F464]" /> MAIN PHOTO
+                          </div>
+                        )}
 
-                        {!img.is_main && (
+                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
                           <button
                             type="button"
-                            onClick={() => setMainImage(img.id)}
-                            className="w-full py-1 bg-[#C7F464] text-[#111111] font-space text-[10px] font-bold uppercase cursor-pointer"
+                            onClick={() => removeImage(img.id)}
+                            className="self-end p-1.5 bg-red-600 hover:bg-red-700 text-white cursor-pointer shadow-md"
+                            title="Remove image"
                           >
-                            Set Main
+                            <Trash2 size={13} />
                           </button>
-                        )}
+
+                          {!img.is_main && (
+                            <button
+                              type="button"
+                              onClick={() => setMainImage(img.id)}
+                              className="w-full py-1.5 bg-[#C7F464] hover:bg-white text-[#111111] font-space text-[10px] font-bold uppercase cursor-pointer shadow-md"
+                            >
+                              Set as Main
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-sans flex items-center gap-2">
+                  <AlertCircle size={16} className="text-amber-600 shrink-0" />
+                  <span>
+                    No photos added yet. Upload files, paste a link, or pick from our Studio Presets above.
+                  </span>
                 </div>
               )}
             </div>
@@ -376,7 +680,10 @@ export const OwnerProductForm: React.FC = () => {
 
               <div className="space-y-3">
                 {variants.map((v, idx) => (
-                  <div key={v.id || idx} className="grid grid-cols-12 gap-2 items-center bg-[#F7F6F2] p-2 border border-[#111111]/10 text-xs">
+                  <div
+                    key={v.id || idx}
+                    className="grid grid-cols-12 gap-2 items-center bg-[#F7F6F2] p-2 border border-[#111111]/10 text-xs"
+                  >
                     <div className="col-span-3">
                       <label className="text-[10px] uppercase font-mono block text-[#111111]/50">Variant SKU</label>
                       <input
@@ -421,6 +728,7 @@ export const OwnerProductForm: React.FC = () => {
                         type="button"
                         onClick={() => removeVariantRow(idx)}
                         className="text-red-600 hover:text-red-800 cursor-pointer pt-3"
+                        title="Remove Variant"
                       >
                         <Trash2 size={14} />
                       </button>
