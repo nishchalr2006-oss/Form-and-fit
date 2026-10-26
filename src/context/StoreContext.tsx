@@ -108,6 +108,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!saved) return INITIAL_PRODUCTS;
     try {
       const parsed: Product[] = JSON.parse(saved);
+      if (!parsed || parsed.length === 0) return INITIAL_PRODUCTS;
       // Auto-heal products that may have empty images from prior failed uploads
       return parsed.map((p) => {
         if (!p.images || p.images.length === 0 || !p.images.some((i) => Boolean(i.url))) {

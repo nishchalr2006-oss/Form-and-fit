@@ -40,9 +40,11 @@ export const CustomerAuth: React.FC = () => {
   const [banner, setBanner] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Redirect if already logged in
-  if (user) {
-    navigate('/account');
-  }
+  React.useEffect(() => {
+    if (user) {
+      navigate('/account');
+    }
+  }, [user, navigate]);
 
   // Password strength logic
   const getPasswordStrength = (pass: string) => {
@@ -75,7 +77,7 @@ export const CustomerAuth: React.FC = () => {
 
     if (res.success) {
       setBanner({ type: 'success', message: 'Welcome back! Redirecting to your account...' });
-      setTimeout(() => navigate('/account'), 800);
+      setTimeout(() => navigate('/account'), 600);
     } else {
       setBanner({ type: 'error', message: res.message || 'Invalid email or password.' });
     }
@@ -106,36 +108,290 @@ export const CustomerAuth: React.FC = () => {
 
     if (res.success) {
       setBanner({ type: 'success', message: res.message || 'Account created successfully! Redirecting...' });
-      setTimeout(() => navigate('/account'), 1000);
+      setTimeout(() => navigate('/account'), 600);
     } else {
       setBanner({ type: 'error', message: res.message || 'Registration failed. Please try again.' });
     }
   };
 
   return (
-    <div className="max-w-md mx-auto my-12 px-4 font-sans text-[#F7F6F2]">
+    <div className="max-w-md mx-auto my-12 px-4 font-sans text-[#111111]">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="bg-[#121216]/90 border border-white/20 p-8 shadow-2xl space-y-6 relative overflow-hidden backdrop-blur-xl rounded-xs hover:border-[#C7F464]/50 transition-colors"
+        className="bg-white border border-[#111111]/20 p-8 shadow-xl space-y-6 relative overflow-hidden rounded-xs"
       >
-        {/* Subtle Ambient Accent Light in Card Background */}
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-[#C7F464]/15 rounded-full blur-3xl pointer-events-none" />
+        {/* Tab Switcher */}
+        <div className="grid grid-cols-2 bg-[#F7F6F2] p-1 border border-[#111111]/20 font-space text-xs font-bold uppercase rounded-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setMode('signin');
+              setBanner(null);
+            }}
+            className={`py-2 transition-all cursor-pointer rounded-xs ${
+              mode === 'signin'
+                ? 'bg-[#111111] text-[#C7F464] font-extrabold shadow-sm'
+                : 'text-[#111111]/60 hover:text-[#111111]'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode('register');
+              setBanner(null);
+            }}
+            className={`py-2 transition-all cursor-pointer rounded-xs ${
+              mode === 'register'
+                ? 'bg-[#111111] text-[#C7F464] font-extrabold shadow-sm'
+                : 'text-[#111111]/60 hover:text-[#111111]'
+            }`}
+          >
+            Register
+          </button>
+        </div>
 
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <Link to="/" className="inline-block group">
-            <span className="font-space font-extrabold text-2xl uppercase tracking-tighter text-[#F7F6F2] group-hover:text-[#C7F464] transition-colors">
-              FORM &amp; FIT
-            </span>
-            <span className="block text-[9px] font-space tracking-widest text-[#C7F464] uppercase -mt-1">
-              Personalized Apparel Portal
-            </span>
+        {/* Feedback Alert Banner */}
+        <AnimatePresence mode="wait">
+          {banner && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`p-3 text-xs font-space font-bold flex items-center gap-2 border rounded-xs ${
+                banner.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-900 border-emerald-500'
+                  : 'bg-red-50 text-red-900 border-red-500'
+              }`}
+            >
+              {banner.type === 'success' ? (
+                <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+              ) : (
+                <AlertCircle size={16} className="shrink-0 text-red-600" />
+              )}
+              <span>{banner.message}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Sign In Form */}
+        {mode === 'signin' && (
+          <motion.form
+            key="signin"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            onSubmit={handleSignIn}
+            className="space-y-4 text-[#111111]"
+          >
+            <div className="space-y-1">
+              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+                Email Address *
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  placeholder="name@domain.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs rounded-xs text-[#111111] focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#111111]"
+                />
+                <Mail size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-xs font-space">
+                <label className="font-bold uppercase text-[#111111]">Password *</label>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Enter your password..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 pr-10 text-xs rounded-xs text-[#111111] focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#111111]"
+                />
+                <Lock size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-3 text-[#111111]/50 hover:text-[#111111] cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-[#111111] text-[#C7F464] font-space font-bold text-xs uppercase tracking-wider hover:bg-[#C7F464] hover:text-[#111111] transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 rounded-xs shadow-md"
+            >
+              {loading ? (
+                <span className="animate-pulse">Authenticating...</span>
+              ) : (
+                <>
+                  Sign In To Account <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </motion.form>
+        )}
+
+        {/* Registration Form */}
+        {mode === 'register' && (
+          <motion.form
+            key="register"
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            onSubmit={handleRegister}
+            className="space-y-4 text-[#111111]"
+          >
+            <div className="space-y-1">
+              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+                Full Name *
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Rahul Sharma"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs rounded-xs text-[#111111] focus:outline-none focus:bg-white"
+                />
+                <User size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+                Email Address *
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  placeholder="name@domain.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs rounded-xs text-[#111111] focus:outline-none focus:bg-white"
+                />
+                <Mail size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+                Phone Number (Optional)
+              </label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 text-xs rounded-xs text-[#111111] focus:outline-none focus:bg-white"
+                />
+                <Phone size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+                Password *
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="At least 6 characters..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 pr-10 text-xs rounded-xs text-[#111111] focus:outline-none focus:bg-white"
+                />
+                <Lock size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-3 text-[#111111]/50 hover:text-[#111111] cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              {/* Password strength bar */}
+              {password && (
+                <div className="pt-1.5 space-y-1">
+                  <div className="flex justify-between items-center text-[10px] font-mono uppercase text-[#111111]/70">
+                    <span>Password Strength:</span>
+                    <span className="font-bold text-[#111111]">{strength.label}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 h-1.5 overflow-hidden rounded-xs">
+                    <div
+                      className={`h-full transition-all duration-300 ${strength.color}`}
+                      style={{ width: `${strength.score}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-space font-bold uppercase text-[#111111]">
+                Confirm Password *
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Re-enter your password..."
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-[#F7F6F2] border border-[#111111] p-2.5 pl-9 pr-10 text-xs rounded-xs text-[#111111] focus:outline-none focus:bg-white"
+                />
+                <Lock size={16} className="absolute left-2.5 top-3 text-[#111111]/40" />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-2.5 top-3 text-[#111111]/50 hover:text-[#111111] cursor-pointer"
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 bg-[#111111] text-[#C7F464] font-space font-bold text-xs uppercase tracking-wider hover:bg-[#C7F464] hover:text-[#111111] transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 rounded-xs shadow-md"
+            >
+              {loading ? (
+                <span className="animate-pulse">Creating Account...</span>
+              ) : (
+                <>
+                  Register New Account <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </motion.form>
+        )}
+
+        {/* Footer Admin Switcher Link */}
+        <div className="pt-4 border-t border-[#111111]/10 text-center">
+          <Link
+            to="/owner/login"
+            className="text-xs font-space font-bold uppercase text-[#111111] hover:text-[#76C400] flex items-center justify-center gap-1.5"
+          >
+            <ShieldCheck size={14} /> Store Owner / Admin Portal Access
           </Link>
-          <h2 className="font-space font-bold text-lg uppercase text-[#F7F6F2] pt-1">
-            {mode === 'signin' ? 'Welcome Back' : 'Create Your Form & Fit Account'}
-          </h2>
         </div>
 
         {/* Tab Switcher */}
